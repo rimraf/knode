@@ -1,0 +1,23 @@
+{
+  "name": "knode",
+  "version": "1.0.0",
+  "description": "yoyoyoyoyoyooyoy",
+  "main": "index.js",
+  "dependencies": {
+    "stat-mode": "^0.2.1"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rimraf/knode.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/rimraf/knode/issues"
+  },
+  "homepage": "https://github.com/rimraf/knode"
+}
