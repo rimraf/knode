@@ -6,6 +6,7 @@ const fs = require('fs')
 const childProcess = require('child_process')
 
 const Mode = require('stat-mode');
+const userid = require('userid');
 
 const filesWithState = [];
 
@@ -46,16 +47,17 @@ fs.readdir(statRoot, (err, files) => {
   for (let statFile of files) {
     fs.stat(statFile, (err, stats) => {
 
-      let mode = new Mode(stats)
+      let mode = new Mode(stats).toString();
+      let date = new Date(stats.mtime).toDateString();
 
       let file = {
-        mode: mode.toString(),
+        mode: mode,
         blocks: stats.blocks,
         name: statFile,
-        uid: stats.uid,
-        gid: stats.gid,
+        uid: userid.username(stats.uid),
+        gid: userid.groupname(stats.gid),
         size: stats.size,
-        mtime: stats.mtime,
+        date: date
       }
       console.log(file);
     })
