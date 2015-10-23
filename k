@@ -2,31 +2,73 @@
 
 'use strict'
 
-const fs = require('fs')
+const fs           = require('fs')
 const childProcess = require('child_process')
+const mode         = require('stat-mode');
+const userid       = require('userid');
 
-const Mode = require('stat-mode');
-const userid = require('userid');
-
-const filesWithState = [];
-
+const filesWithState = {};
 let gitRoot;
 
+// find the root git folder (the one with .git)
 exec('command git rev-parse --show-toplevel')
   .then((res) => {
     gitRoot = res.trim();
     return exec('command git status --porcelain --ignored --untracked-files=normal ' + gitRoot)
   })
   .then((msg) => {
-    const statuses = msg.trim().split('\n');
+    return msg.trim().split('\n');
+  })
+  .then((statuses) => {
     statuses.forEach((porcelainStatus) => {
       const status = porcelainStatus.substring(0, 2);
       const filename = porcelainStatus.substring(3);
-      filesWithState.push({filename, status});
+      filesWithState[filename] = status;
     })
   })
-  .then(() => console.log(filesWithState))
+  .then(() => {
+    return readdir(gitRoot);
+  })
+  .then((files) => {
+    return Promise.all(files.map((filename) => {
+      return stat(filename).then((stats) => {
+        return {
+          mode: mode(stats).toString(),
+          blocks: stats.blocks,
+          name: filename,
+          uid: userid.username(stats.uid),
+          gid: userid.groupname(stats.gid),
+          size: stats.size,
+          date: new Date(stats.mtime).toDateString()
+        }
+      })
+    }))
+  })
+  .then((files) => {
+    files.forEach((file) => {
+      console.log(file.mode, file.blocks, file.uid, file.gid, file.size, file.mtime, '|', file.name);
+    })
+  })
   .catch((err) => console.log(err))
+
+
+function readdir(path) {
+  return new Promise((resolve, reject) => {
+    fs.readdir(path, (err, files) => {
+      if (err) return reject(err);
+      resolve(files);
+    });
+  });
+}
+
+function stat(path) {
+  return new Promise((resolve, reject) => {
+    fs.stat(path, (err, stats) => {
+      if (err) return reject(err);
+      resolve(stats);
+    });
+  });
+}
 
 function exec(cmd, options) {
   return new Promise((resolve, reject) => {
@@ -37,30 +79,3 @@ function exec(cmd, options) {
   });
 }
 
-
-const statRoot = './';
-let dirContent = [];
-
-// Stat stuff
-fs.readdir(statRoot, (err, files) => {
-
-  for (let statFile of files) {
-    fs.stat(statFile, (err, stats) => {
-
-      let mode = new Mode(stats).toString();
-      let date = new Date(stats.mtime).toDateString();
-
-      let file = {
-        mode: mode,
-        blocks: stats.blocks,
-        name: statFile,
-        uid: userid.username(stats.uid),
-        gid: userid.groupname(stats.gid),
-        size: stats.size,
-        date: date
-      }
-      console.log(file);
-    })
-  }
-
-});
