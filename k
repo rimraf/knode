@@ -30,7 +30,7 @@ function exec(cmd, options) {
 fs.readdir('./', (err, files) => {
 
   for (let file in files) {
-    fs.stat(file);
+    // fs.stat(file);
     console.log(file);
   };
 
