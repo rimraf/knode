@@ -7,6 +7,7 @@ const childProcess = require('child_process')
 
 const Mode = require('stat-mode');
 
+const filesWithState = [];
 
 let gitRoot;
 
@@ -15,7 +16,15 @@ exec('command git rev-parse --show-toplevel')
     gitRoot = res.trim();
     return exec('command git status --porcelain --ignored --untracked-files=normal ' + gitRoot)
   })
-  .then((msg) => console.log(msg))
+  .then((msg) => {
+    const statuses = msg.trim().split('\n');
+    statuses.forEach((porcelainStatus) => {
+      const status = porcelainStatus.substring(0, 2);
+      const filename = porcelainStatus.substring(3);
+      filesWithState.push({filename, status});
+    })
+  })
+  .then(() => console.log(filesWithState))
   .catch((err) => console.log(err))
 
 function exec(cmd, options) {
