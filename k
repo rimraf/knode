@@ -5,7 +5,8 @@
 const fs = require('fs')
 const childProcess = require('child_process')
 
-const gitStatus = {};
+const filesWithState = [];
+
 let gitRoot;
 
 exec('command git rev-parse --show-toplevel')
@@ -17,12 +18,11 @@ exec('command git rev-parse --show-toplevel')
     const statuses = msg.trim().split('\n');
     statuses.forEach((porcelainStatus) => {
       const status = porcelainStatus.substring(0, 2);
-      const file = porcelainStatus.substring(2);
-      if (!gitStatus[status]) gitStatus[status] = [];
-      gitStatus[status].push(file);
+      const filename = porcelainStatus.substring(3);
+      filesWithState.push({filename, status});
     })
   })
-  .then(() => console.log(gitStatus))
+  .then(() => console.log(filesWithState))
   .catch((err) => console.log(err))
 
 
