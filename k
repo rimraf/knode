@@ -16,13 +16,6 @@ exec('command git rev-parse --show-toplevel')
   .then((msg) => console.log(msg))
   .catch((err) => console.log(err))
 
-
-
-
-
-
-
-
 function exec(cmd, options) {
   return new Promise((resolve, reject) => {
     childProcess.exec(cmd, options, (error, stdout, stderr) => {
@@ -31,3 +24,14 @@ function exec(cmd, options) {
     });
   });
 }
+
+
+// Stat stuff
+fs.readdir('./', (err, files) => {
+
+  for (let file in files) {
+    fs.stat(file);
+    console.log(file);
+  };
+
+});
