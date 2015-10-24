@@ -24,6 +24,11 @@ exec('command git rev-parse --show-toplevel')
   })
   .then(() => readdir(gitRoot))
   .then((files) => {
+    files.unshift('..');
+    files.unshift('.');
+    return files;
+  })
+  .then((files) => {
     return Promise.all(files.map((filename) => {
       return stat(filename).then((stats) => {
         return {
