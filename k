@@ -17,6 +17,46 @@ const longest = {}
 let gitRoot
 let totalBlocks = 0
 
+const statusMarkers = {
+  // https://git-scm.com/docs/git-status
+  // default
+  '  ': '|'.green,
+
+  // not updated
+  ' M': '+'.red,
+  ' D': '-'.red,
+
+  // updated in index
+  'M ': '+'.green,
+  'MM': '+'.green,
+  'MD': '+'.green,
+
+  // added to index
+  'A ': '+'.green,
+  'AM': '+'.green,
+  'AD': '+'.green,
+
+  // deleted from index
+  'D ': '-'.green,
+  'DM': '-'.green,
+
+  // renamed in index
+  'R ': '>'.green,
+  'RM': '>'.green,
+  'RD': '>'.green,
+
+  // copied in index
+  'C ': '>'.green,
+  'CM': '>'.green,
+  'CD': '>'.green,
+
+  // untracked
+  '??': '+'.yellow,
+
+  // ignored
+  '!!': '|'.grey,
+}
+
 // find the root git folder (the one with .git)
 exec('command git rev-parse --show-toplevel')
   .then((res)      => gitRoot = res.trim())
@@ -67,7 +107,7 @@ exec('command git rev-parse --show-toplevel')
         pad(file.gid,       longest.gid)  .grey,
         pad(longest.size,   file.size),
         pad(longest.date,   file.date),
-        file.status,
+        statusMarkers[file.status],
         file.isSymbolicLink
           ? file.name.grey + ' -> ' + path.relative(gitRoot, file.realpath)
           : file.name.blueIf(file.isDirectory).redIf(file.isExecutable)
