@@ -12,13 +12,9 @@ let gitRoot;
 
 // find the root git folder (the one with .git)
 exec('command git rev-parse --show-toplevel')
-  .then((res) => {
-    gitRoot = res.trim();
-    return exec('command git status --porcelain --ignored --untracked-files=normal ' + gitRoot)
-  })
-  .then((msg) => {
-    return msg.trim().split('\n');
-  })
+  .then((res)      => gitRoot = res.trim())
+  .then(()         => exec('command git status --porcelain --ignored --untracked-files=normal ' + gitRoot))
+  .then((msg)      => msg.trim().split('\n'))
   .then((statuses) => {
     statuses.forEach((porcelainStatus) => {
       const status = porcelainStatus.substring(0, 2);
@@ -26,9 +22,7 @@ exec('command git rev-parse --show-toplevel')
       filesWithState[filename] = status;
     })
   })
-  .then(() => {
-    return readdir(gitRoot);
-  })
+  .then(() => readdir(gitRoot))
   .then((files) => {
     return Promise.all(files.map((filename) => {
       return stat(filename).then((stats) => {
