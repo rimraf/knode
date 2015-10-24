@@ -3,11 +3,13 @@
 'use strict'
 
 const fs           = require('fs')
+const pad          = require('pad')
 const childProcess = require('child_process')
 const mode         = require('stat-mode');
 const userid       = require('userid');
 
 const filesWithState = {};
+const longest = {};
 let gitRoot;
 
 // find the root git folder (the one with .git)
@@ -31,27 +33,44 @@ exec('command git rev-parse --show-toplevel')
   .then((files) => {
     return Promise.all(files.map((filename) => {
       return stat(filename).then((stats) => {
-        return {
-          mode: mode(stats).toString(),
-          nlink: stats.nlink,
-          name: filename,
-          uid: userid.username(stats.uid),
-          gid: userid.groupname(stats.gid),
-          size: stats.size,
-          date: new Date(stats.mtime).toDateString()
-        }
+        return new Stats()
+          .mode(mode(stats).toString())
+          .nlink(stats.nlink)
+          .name(filename)
+          .uid(userid.username(stats.uid))
+          .gid(userid.groupname(stats.gid))
+          .size(stats.size)
+          .date(new Date(stats.mtime).toDateString())
+          .stats;
       })
     }))
   })
   .then((files) => {
     files.forEach((file) => {
-      console.log(file.mode, file.nlink, file.uid, file.gid, file.size, file.date, '|', file.name);
+      console.log(
+        file.mode,
+        pad(longest.nlink,  file.nlink),
+        pad(longest.uid,    file.uid),
+        pad(file.gid,       longest.gid),
+        pad(longest.size,   file.size),
+        pad(longest.date,   file.date),
+        file.name
+      );
     })
   })
   .catch((err) => console.log(err))
 
-
-
+function Stats() {
+  this.stats = {};
+  const props = 'mode nlink uid gid size date name'.split(' ')
+  for (let prop of props) {
+    this[prop] = function (value) {
+      this.stats[prop] = value;
+      longest[prop] = Math.max(value.toString().length, longest[prop] || 0);
+      return this;
+    }
+  }
+}
 
 function readdir(path) {
   return new Promise((resolve, reject) => {
