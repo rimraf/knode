@@ -28,7 +28,7 @@ exec('command git rev-parse --show-toplevel')
       return stat(filename).then((stats) => {
         return {
           mode: mode(stats).toString(),
-          blocks: stats.blocks,
+          nlink: stats.nlink,
           name: filename,
           uid: userid.username(stats.uid),
           gid: userid.groupname(stats.gid),
@@ -40,10 +40,12 @@ exec('command git rev-parse --show-toplevel')
   })
   .then((files) => {
     files.forEach((file) => {
-      console.log(file.mode, file.blocks, file.uid, file.gid, file.size, file.mtime, '|', file.name);
+      console.log(file.mode, file.nlink, file.uid, file.gid, file.size, file.date, '|', file.name);
     })
   })
   .catch((err) => console.log(err))
+
+
 
 
 function readdir(path) {
