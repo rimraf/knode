@@ -13,7 +13,7 @@ const statuses = {}
 const longest = {}
 
 let gitRoot
-let totalBlocks = 0;
+let totalBlocks = 0
 
 // find the root git folder (the one with .git)
 exec('command git rev-parse --show-toplevel')
@@ -36,7 +36,7 @@ exec('command git rev-parse --show-toplevel')
   .then((files) => {
     return Promise.all(files.map((filename) => {
       return lstat(filename).then((stats) => {
-        totalBlocks += stats.blocks;
+        totalBlocks += stats.blocks
         return new Stats()
           .mode(mode(stats).toString())
           .nlink(stats.nlink)
@@ -87,7 +87,7 @@ function Stats() {
 }
 
 String.prototype.blueIf = function (value) {
-  return value ? this.blue : this;
+  return value ? this.blue : this
 }
 
 String.prototype.greenIf = function (value) {
