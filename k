@@ -37,9 +37,10 @@ exec('command git rev-parse --show-toplevel')
   .then((files) => {
     return Promise.all(files.map((filename) => {
       return lstat(filename).then((stats) => {
+        const fileMode = mode(stats);
         totalBlocks += stats.blocks
         return new Stats()
-          .mode(mode(stats).toString())
+          .mode(fileMode.toString())
           .nlink(stats.nlink)
           .uid(userid.username(stats.uid))
           .gid(userid.groupname(stats.gid))
@@ -50,6 +51,7 @@ exec('command git rev-parse --show-toplevel')
           .isDirectory(stats.isDirectory())
           .isSymbolicLink(stats.isSymbolicLink())
           .realpath(stats.realpath)
+          .isExecutable(isExecutable(fileMode))
           .stats
       })
     }))
@@ -67,7 +69,7 @@ exec('command git rev-parse --show-toplevel')
         file.status,
         file.isSymbolicLink
           ? file.name.grey + ' -> ' + path.relative(gitRoot, file.realpath)
-          : file.name.blueIf(file.isDirectory)
+          : file.name.blueIf(file.isDirectory).redIf(file.isExecutable)
       )
     })
   })
@@ -76,7 +78,7 @@ exec('command git rev-parse --show-toplevel')
 
 function Stats() {
   this.stats = {}
-  const props = 'mode nlink uid gid size date status name isDirectory isSymbolicLink realpath'.split(' ')
+  const props = 'mode nlink uid gid size date status name isDirectory isSymbolicLink isExecutable realpath'.split(' ')
   for (let prop of props) {
     this[prop] = function (value) {
       this.stats[prop] = value
@@ -93,8 +95,16 @@ String.prototype.blueIf = function (value) {
   return value ? this.blue : this
 }
 
+String.prototype.redIf = function (value) {
+  return value ? this.red : this
+}
+
 String.prototype.greenIf = function (value) {
   return value ? this.green : this
+}
+
+function isExecutable(mode) {
+  return mode.owner.execute || mode.group.execute || mode.others.execute
 }
 
 function readdir(path) {
