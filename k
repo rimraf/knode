@@ -8,7 +8,7 @@ const childProcess = require('child_process')
 const mode         = require('stat-mode');
 const userid       = require('userid');
 
-const filesWithState = {};
+const statuses = {};
 const longest = {};
 let gitRoot;
 
@@ -17,11 +17,11 @@ exec('command git rev-parse --show-toplevel')
   .then((res)      => gitRoot = res.trim())
   .then(()         => exec('command git status --porcelain --ignored --untracked-files=normal ' + gitRoot))
   .then((msg)      => msg.trim().split('\n'))
-  .then((statuses) => {
-    statuses.forEach((porcelainStatus) => {
+  .then((porcelainStatuses) => {
+    porcelainStatuses.forEach((porcelainStatus) => {
       const status = porcelainStatus.substring(0, 2);
       const filename = porcelainStatus.substring(3);
-      filesWithState[filename] = status;
+      statuses[filename] = status;
     })
   })
   .then(() => readdir(gitRoot))
@@ -40,6 +40,7 @@ exec('command git rev-parse --show-toplevel')
           .uid(userid.username(stats.uid))
           .gid(userid.groupname(stats.gid))
           .size(stats.size)
+          .status(statuses[filename] || '  ')
           .date(new Date(stats.mtime).toDateString())
           .stats;
       })
@@ -54,6 +55,7 @@ exec('command git rev-parse --show-toplevel')
         pad(file.gid,       longest.gid),
         pad(longest.size,   file.size),
         pad(longest.date,   file.date),
+        pad(longest.status, file.status),
         file.name
       );
     })
@@ -62,7 +64,7 @@ exec('command git rev-parse --show-toplevel')
 
 function Stats() {
   this.stats = {};
-  const props = 'mode nlink uid gid size date name'.split(' ')
+  const props = 'mode nlink uid gid size date status name'.split(' ')
   for (let prop of props) {
     this[prop] = function (value) {
       this.stats[prop] = value;
