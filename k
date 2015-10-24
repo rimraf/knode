@@ -35,7 +35,7 @@ exec('command git rev-parse --show-toplevel')
   })
   .then((files) => {
     return Promise.all(files.map((filename) => {
-      return stat(filename).then((stats) => {
+      return lstat(filename).then((stats) => {
         totalBlocks += stats.blocks;
         return new Stats()
           .mode(mode(stats).toString())
@@ -47,6 +47,8 @@ exec('command git rev-parse --show-toplevel')
           .status(statuses[filename] || '  ')
           .date(new Date(stats.mtime).toDateString())
           .isDirectory(stats.isDirectory())
+          .isSymbolicLink(stats.isSymbolicLink())
+          .realpath(stats.realpath)
           .stats
       })
     }))
@@ -62,7 +64,9 @@ exec('command git rev-parse --show-toplevel')
         pad(longest.size,   file.size),
         pad(longest.date,   file.date),
         pad(longest.status, file.status),
-        file.name                         .blueIf(file.isDirectory)
+        file.isSymbolicLink
+          ? file.name.grey + ' -> ' + file.realpath
+          : file.name.blueIf(file.isDirectory)
       )
     })
   })
@@ -71,11 +75,11 @@ exec('command git rev-parse --show-toplevel')
 
 function Stats() {
   this.stats = {}
-  const props = 'mode nlink uid gid size date status name isDirectory'.split(' ')
+  const props = 'mode nlink uid gid size date status name isDirectory isSymbolicLink realpath'.split(' ')
   for (let prop of props) {
     this[prop] = function (value) {
       this.stats[prop] = value
-      if (prop === 'isDirectory') return this;
+      if (prop === 'isDirectory' || prop == 'isSymbolicLink' || prop === 'name' || prop === 'realpath') return this
       longest[prop] = Math.max(value.toString().length, longest[prop] || 0)
       return this
     }
@@ -84,6 +88,10 @@ function Stats() {
 
 String.prototype.blueIf = function (value) {
   return value ? this.blue : this;
+}
+
+String.prototype.greenIf = function (value) {
+  return value ? this.green : this
 }
 
 function readdir(path) {
@@ -95,11 +103,28 @@ function readdir(path) {
   })
 }
 
-function stat(path) {
+function lstat(path) {
   return new Promise((resolve, reject) => {
-    fs.stat(path, (err, stats) => {
+    fs.lstat(path, (err, stats) => {
       if (err) return reject(err)
+      if (stats.isSymbolicLink()) return attachRealPath(stats, path).then(resolve, reject)
       resolve(stats)
+    })
+  })
+}
+
+function attachRealPath(stats, path) {
+  return realpath(path).then((resolvedPath) => {
+    stats.realpath = resolvedPath
+    return stats
+  })
+}
+
+function realpath(path) {
+  return new Promise((resolve, reject) => {
+    fs.realpath(path, (err, resolvedPath) => {
+      if (err) return reject(err)
+      resolve(resolvedPath)
     })
   })
 }
