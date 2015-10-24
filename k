@@ -4,12 +4,14 @@
 
 const fs           = require('fs')
 const pad          = require('pad')
+const colors       = require('colors')
 const childProcess = require('child_process')
 const mode         = require('stat-mode')
 const userid       = require('userid')
 
 const statuses = {}
 const longest = {}
+
 let gitRoot
 let totalBlocks = 0;
 
@@ -44,6 +46,7 @@ exec('command git rev-parse --show-toplevel')
           .size(stats.size)
           .status(statuses[filename] || '  ')
           .date(new Date(stats.mtime).toDateString())
+          .isDirectory(stats.isDirectory())
           .stats
       })
     }))
@@ -54,27 +57,33 @@ exec('command git rev-parse --show-toplevel')
       console.log(
         file.mode,
         pad(longest.nlink,  file.nlink),
-        pad(longest.uid,    file.uid),
-        pad(file.gid,       longest.gid),
+        pad(longest.uid,    file.uid)     .grey,
+        pad(file.gid,       longest.gid)  .grey,
         pad(longest.size,   file.size),
         pad(longest.date,   file.date),
         pad(longest.status, file.status),
-        file.name
+        file.name                         .blueIf(file.isDirectory)
       )
     })
   })
   .catch((err) => console.log(err))
 
+
 function Stats() {
   this.stats = {}
-  const props = 'mode nlink uid gid size date status name'.split(' ')
+  const props = 'mode nlink uid gid size date status name isDirectory'.split(' ')
   for (let prop of props) {
     this[prop] = function (value) {
       this.stats[prop] = value
+      if (prop === 'isDirectory') return this;
       longest[prop] = Math.max(value.toString().length, longest[prop] || 0)
       return this
     }
   }
+}
+
+String.prototype.blueIf = function (value) {
+  return value ? this.blue : this;
 }
 
 function readdir(path) {
