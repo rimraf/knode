@@ -64,7 +64,7 @@ exec('command git rev-parse --show-toplevel')
         pad(file.gid,       longest.gid)  .grey,
         pad(longest.size,   file.size),
         pad(longest.date,   file.date),
-        pad(longest.status, file.status),
+        file.status,
         file.isSymbolicLink
           ? file.name.grey + ' -> ' + path.relative(gitRoot, file.realpath)
           : file.name.blueIf(file.isDirectory)
@@ -80,8 +80,10 @@ function Stats() {
   for (let prop of props) {
     this[prop] = function (value) {
       this.stats[prop] = value
-      if (prop === 'isDirectory' || prop == 'isSymbolicLink' || prop === 'name' || prop === 'realpath') return this
-      longest[prop] = Math.max(value.toString().length, longest[prop] || 0)
+      // if ('one of these')
+      if ('nlink uid gid size date'.split(' ').indexOf(prop) > -1) {
+        longest[prop] = Math.max(value.toString().length, longest[prop] || 0)
+      }
       return this
     }
   }
