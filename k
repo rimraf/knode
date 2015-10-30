@@ -11,7 +11,9 @@ const childProcess = require('child_process')
 const mode         = require('stat-mode')
 const userid       = require('userid')
 
-const statuses = {}
+const statuses = {
+  k: 'balls'
+}
 const longest = {}
 
 let gitRoot
@@ -61,7 +63,7 @@ const statusMarkers = {
 exec('command git rev-parse --show-toplevel')
   .then((res)      => gitRoot = res.trim())
   .then(()         => exec('command git status --porcelain --ignored --untracked-files=normal ' + gitRoot))
-  .then((msg)      => msg.trim().split('\n'))
+  .then((msg)      => msg.split('\n'))
   .then((porcelainStatuses) => {
     porcelainStatuses.forEach((porcelainStatus) => {
       const status = porcelainStatus.substring(0, 2)
@@ -109,7 +111,7 @@ exec('command git rev-parse --show-toplevel')
         pad(longest.date,   file.date),
         statusMarkers[file.status],
         file.isSymbolicLink
-          ? file.name.magenta + ' -> ' + path.relative(gitRoot, file.realpath)
+          ? file.name.cyan + ' -> ' + path.relative(gitRoot, file.realpath)
           : file.name.blueIf(file.isDirectory).redIf(file.isExecutable)
       )
     })
