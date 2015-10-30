@@ -6,7 +6,7 @@ const fs           = require('fs')
 const pad          = require('pad')
 const path         = require('path')
 const colors       = require('colors')
-const dateFormat   = require('dateformat');
+const dateFormat   = require('dateformat')
 const childProcess = require('child_process')
 const mode         = require('stat-mode')
 const userid       = require('userid')
@@ -109,7 +109,7 @@ exec('command git rev-parse --show-toplevel')
         pad(longest.date,   file.date),
         statusMarkers[file.status],
         file.isSymbolicLink
-          ? file.name.grey + ' -> ' + path.relative(gitRoot, file.realpath)
+          ? file.name.magenta + ' -> ' + path.relative(gitRoot, file.realpath)
           : file.name.blueIf(file.isDirectory).redIf(file.isExecutable)
       )
     })
