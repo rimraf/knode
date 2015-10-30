@@ -65,7 +65,7 @@ exec('command git rev-parse --show-toplevel')
   .then((porcelainStatuses) => {
     porcelainStatuses.forEach((porcelainStatus) => {
       const status = porcelainStatus.substring(0, 2)
-      const filename = porcelainStatus.substring(3)
+      const filename = porcelainStatus.substring(3).replace(/\/$/, "")
       statuses[filename] = status
     })
   })
