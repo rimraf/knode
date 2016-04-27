@@ -11,9 +11,7 @@ const childProcess = require('child_process')
 const mode         = require('stat-mode')
 const userid       = require('userid')
 
-const statuses = {
-  k: 'balls'
-}
+const statuses = {}
 const longest = {}
 
 let gitRoot
