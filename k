@@ -171,7 +171,7 @@ Promise.all([
       })
     })
 })
-
+.catch(err)
 
 
 function log(data) {
