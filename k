@@ -26,7 +26,7 @@ const statusMarkers = {
 
   // not updated
   ' M': '+'.red,
-  ' D': '-'.red,
+  ' D': '-'.red, //(doesn't work because deleted files are not shown by readdir)
 
   // updated in index
   'M ': '+'.green,
@@ -38,16 +38,16 @@ const statusMarkers = {
   'AM': '+'.green,
   'AD': '+'.green,
 
-  // deleted from index
+  // deleted from index (don't work because deleted files are not shown by readdir)
   'D ': '-'.green,
   'DM': '-'.green,
 
-  // renamed in index
+  // renamed in index (don't work because output from git status --porcelain is 'oldfile -> newfile' look at git status -z)
   'R ': '>'.green,
   'RM': '>'.green,
   'RD': '>'.green,
 
-  // copied in index
+  // copied in index (?)
   'C ': '>'.green,
   'CM': '>'.green,
   'CD': '>'.green,
