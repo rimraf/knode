@@ -10,6 +10,15 @@ const dateFormat   = require('dateformat')
 const childProcess = require('child_process')
 const mode         = require('stat-mode')
 const userid       = require('userid')
+const flatten      = require('lodash/fp/flatten')
+const split        = require('lodash/fp/split')
+const trim         = require('lodash/fp/trim')
+const trimEnd      = require('lodash/fp/trimEnd')
+const trimStart    = require('lodash/fp/trimStart')
+const map          = require('lodash/fp/map')
+const uniq         = require('lodash/fp/uniq')
+const dropRight    = require('lodash/fp/dropRight')
+const reject       = require('lodash/fp/reject')
 
 const statuses = {}
 const longest = {}
@@ -57,65 +66,91 @@ const statusMarkers = {
   '!!': '|'.grey,
 }
 
-// find the root git folder (the one with .git)
-exec('command git rev-parse --show-toplevel')
-  .then((res)      => gitRoot = res.trim())
-  .then(()         => exec('command git status --porcelain --ignored --untracked-files=normal ' + gitRoot))
-  .then((msg)      => msg.split('\n'))
-  .then((porcelainStatuses) => {
-    porcelainStatuses.forEach((porcelainStatus) => {
-      const status = porcelainStatus.substring(0, 2)
-      const filename = porcelainStatus.substring(3).replace(/\/$/, "")
-      statuses[filename] = status
-    })
-  })
-  .then(() => readdir(gitRoot))
-  .then((files) => {
-    files.unshift('..')
-    files.unshift('.')
-    return files
-  })
-  .then((files) => {
-    return Promise.all(files.map((filename) => {
-      return lstat(filename).then((stats) => {
-        const fileMode = mode(stats);
-        totalBlocks += stats.blocks
-        return new Stats()
-          .mode(fileMode.toString())
-          .nlink(stats.nlink)
-          .uid(userid.username(stats.uid))
-          .gid(userid.groupname(stats.gid))
-          .size(stats.size)
-          .status(statuses[filename] || '  ')
-          .date(dateFormat(new Date(stats.mtime), 'mmm dd HH:MM'))
-          .name(filename)
-          .isDirectory(stats.isDirectory())
-          .isSymbolicLink(stats.isSymbolicLink())
-          .realpath(stats.realpath)
-          .isExecutable(isExecutable(fileMode))
-          .stats
-      })
-    }))
-  })
-  .then((files) => {
-    console.log('total', totalBlocks)
-    files.forEach((file) => {
-      console.log(
-        file.mode,
-        pad(longest.nlink,  file.nlink),
-        pad(longest.uid,    file.uid)     .grey,
-        pad(file.gid,       longest.gid)  .grey,
-        pad(longest.size,   file.size),
-        pad(longest.date,   file.date),
-        statusMarkers[file.status],
-        file.isSymbolicLink
-          ? file.name.cyan + ' -> ' + path.relative(gitRoot, file.realpath)
-          : file.name.blueIf(file.isDirectory).redIf(file.isExecutable)
-      )
-    })
-  })
-  .catch((err) => console.log(err))
+const removeUntrackedFolders = reject(item => {
+  return item.substr(0, 2) === '??' && item.substr(-1) === '/';
+});
 
+Promise.all([
+  exec('command git status --porcelain --ignored'),
+  exec('command git status --porcelain --untracked-files=all'),
+])
+.then(map(split('\n')))
+.then(map(dropRight(1))) // last element in each array is always an empty string
+.then(flatten)
+.then(uniq)
+.then(removeUntrackedFolders)
+.then(log)
+.catch(err)
+
+
+// find the root git folder (the one with .git)
+// exec('command git rev-parse --show-toplevel')
+//   .then(toplevel => gitRoot = toplevel.trim())
+//   .then(log)
+  // .then((res)      => gitRoot = res.trim())
+  // .then(()         => exec('command git status --porcelain --ignored --untracked-files=normal ' + gitRoot))
+  // .then((msg)      => msg.split('\n'))
+  // .then((porcelainStatuses) => {
+  //   porcelainStatuses.forEach((porcelainStatus) => {
+  //     const status = porcelainStatus.substring(0, 2)
+  //     const filename = porcelainStatus.substring(3).replace(/\/$/, "")
+  //     statuses[filename] = status
+  //   })
+  // })
+  // .then(() => readdir(gitRoot))
+  // .then((files) => {
+  //   files.unshift('..')
+  //   files.unshift('.')
+  //   return files
+  // })
+  // .then((files) => {
+  //   return Promise.all(files.map((filename) => {
+  //     return lstat(filename).then((stats) => {
+  //       const fileMode = mode(stats);
+  //       totalBlocks += stats.blocks
+  //       return new Stats()
+  //         .mode(fileMode.toString())
+  //         .nlink(stats.nlink)
+  //         .uid(userid.username(stats.uid))
+  //         .gid(userid.groupname(stats.gid))
+  //         .size(stats.size)
+  //         .status(statuses[filename] || '  ')
+  //         .date(dateFormat(new Date(stats.mtime), 'mmm dd HH:MM'))
+  //         .name(filename)
+  //         .isDirectory(stats.isDirectory())
+  //         .isSymbolicLink(stats.isSymbolicLink())
+  //         .realpath(stats.realpath)
+  //         .isExecutable(isExecutable(fileMode))
+  //         .stats
+  //     })
+  //   }))
+  // })
+  // .then((files) => {
+  //   console.log('total', totalBlocks)
+  //   files.forEach((file) => {
+  //     console.log(
+  //       file.mode,
+  //       pad(longest.nlink,  file.nlink),
+  //       pad(longest.uid,    file.uid)     .grey,
+  //       pad(file.gid,       longest.gid)  .grey,
+  //       pad(longest.size,   file.size),
+  //       pad(longest.date,   file.date),
+  //       statusMarkers[file.status],
+  //       file.isSymbolicLink
+  //         ? file.name.cyan + ' -> ' + path.relative(gitRoot, file.realpath)
+  //         : file.name.blueIf(file.isDirectory).redIf(file.isExecutable)
+  //     )
+  //   })
+  // })
+
+function log(data) {
+  console.log(data)
+  return data
+}
+function err(data) {
+  console.error(data)
+  return data
+}
 
 function Stats() {
   this.stats = {}

@@ -4,11 +4,12 @@
   "description": "experimental implementation of k in node",
   "main": "index.js",
   "dependencies": {
-    "colors": "^1.1.2",
-    "dateformat": "^1.0.11",
-    "pad": "^1.0.0",
-    "stat-mode": "^0.2.1",
-    "userid": "^0.2.0"
+    "colors": "1.1.2",
+    "dateformat": "1.0.12",
+    "lodash": "4.11.1",
+    "pad": "1.0.0",
+    "stat-mode": "0.2.1",
+    "userid": "0.2.0"
   },
   "devDependencies": {},
   "scripts": {
