@@ -19,6 +19,7 @@ const map          = require('lodash/fp/map')
 const uniq         = require('lodash/fp/uniq')
 const dropRight    = require('lodash/fp/dropRight')
 const reject       = require('lodash/fp/reject')
+const concat       = require('lodash/fp/concat')
 
 const statuses = {}
 const longest = {}
