@@ -1,7 +1,7 @@
 {
-  "name": "knode",
-  "version": "1.0.0",
-  "description": "yoyoyoyoyoyooyoy",
+  "name": "kay",
+  "version": "0.0.0",
+  "description": "experimental implementation of k in node",
   "main": "index.js",
   "dependencies": {
     "colors": "^1.1.2",
