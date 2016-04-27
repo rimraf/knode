@@ -20,8 +20,8 @@ const uniq         = require('lodash/fp/uniq')
 const dropRight    = require('lodash/fp/dropRight')
 const reject       = require('lodash/fp/reject')
 const concat       = require('lodash/fp/concat')
+const each         = require('lodash/fp/each')
 
-const longest = {}
 
 const statusMarkers = {
   // https://git-scm.com/docs/git-status
@@ -73,6 +73,8 @@ const removeUntrackedFolders = reject(item => {
 });
 
 
+const statuses = {}
+const longest = {}
 
 /**
  * Gather all the files. We use two commands here because --untracked-files=all
@@ -101,12 +103,11 @@ const statusPromise = Promise.all([
 .then(removeUntrackedFolders)
 
 // convert the strings into more usable form e.g. {file: 'path', status: '??'}
-.then(map(porcelainStatus => ({
-  status: porcelainStatus.substring(0, 2),
-  filename: porcelainStatus.substring(3).replace(/\/$/, "")
-})))
-
-.catch(err)
+.then(each(porcelainStatus => {
+  const status = porcelainStatus.substring(0, 2);
+  const filename = porcelainStatus.substring(3).replace(/\/$/, "");
+  statuses[filename] = status;
+}))
 
 
 
@@ -127,7 +128,6 @@ Promise.all([
 .then(results => {
   let totalBlocks = 0
   const gitRoot = results[0];
-  const statuses = results[1];
 
   readdir(gitRoot)
     .then(concat(['.', '..']))
@@ -155,7 +155,7 @@ Promise.all([
     })
     .then(files => {
       console.log('total', totalBlocks)
-      files.forEach((file) => {
+      files.forEach(file => {
         console.log(
           file.mode,
           pad(longest.nlink,  file.nlink),
