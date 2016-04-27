@@ -67,20 +67,49 @@ const statusMarkers = {
   '!!': '|'.grey,
 }
 
+
+/**
+ * Removes any strings from the array that start '??' and end '/'
+ * i.e. untracked folders
+ */
 const removeUntrackedFolders = reject(item => {
   return item.substr(0, 2) === '??' && item.substr(-1) === '/';
 });
 
-Promise.all([
+
+
+/**
+ * Gather all the files. We use two commands here because --untracked-files=all
+ * used with --ignored in the same command will recursively list all ignored
+ * files, which is slow. There is a little duplication because of this, but then
+ * use a bit of lodash fun to clean it up.
+ */
+
+const statusPromise = Promise.all([
   exec('command git status --porcelain --ignored'),
   exec('command git status --porcelain --untracked-files=all'),
 ])
+
+// split each string into an array of files
 .then(map(split('\n')))
-.then(map(dropRight(1))) // last element in each array is always an empty string
+
+// remove the last element in each array as it is always an empty string
+.then(map(dropRight(1)))
+
+// squish them together and remove duplicates
 .then(flatten)
 .then(uniq)
+
+// untracked folders need to be removed because untracked files are also there
+// and untracked folders are just extra noise
 .then(removeUntrackedFolders)
-.then(log)
+
+// convert the strings into more usable form e.g. {file: 'path', status: '??'}
+.then(map(porcelainStatus => ({
+  status: porcelainStatus.substring(0, 2),
+  filename: porcelainStatus.substring(3).replace(/\/$/, "")
+})))
+
 .catch(err)
 
 
