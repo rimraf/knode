@@ -21,11 +21,7 @@ const dropRight    = require('lodash/fp/dropRight')
 const reject       = require('lodash/fp/reject')
 const concat       = require('lodash/fp/concat')
 
-const statuses = {}
 const longest = {}
-
-let gitRoot
-let totalBlocks = 0
 
 const statusMarkers = {
   // https://git-scm.com/docs/git-status
@@ -113,65 +109,70 @@ const statusPromise = Promise.all([
 .catch(err)
 
 
-// find the root git folder (the one with .git)
-// exec('command git rev-parse --show-toplevel')
-//   .then(toplevel => gitRoot = toplevel.trim())
-//   .then(log)
-  // .then((res)      => gitRoot = res.trim())
-  // .then(()         => exec('command git status --porcelain --ignored --untracked-files=normal ' + gitRoot))
-  // .then((msg)      => msg.split('\n'))
-  // .then((porcelainStatuses) => {
-  //   porcelainStatuses.forEach((porcelainStatus) => {
-  //     const status = porcelainStatus.substring(0, 2)
-  //     const filename = porcelainStatus.substring(3).replace(/\/$/, "")
-  //     statuses[filename] = status
-  //   })
-  // })
-  // .then(() => readdir(gitRoot))
-  // .then((files) => {
-  //   files.unshift('..')
-  //   files.unshift('.')
-  //   return files
-  // })
-  // .then((files) => {
-  //   return Promise.all(files.map((filename) => {
-  //     return lstat(filename).then((stats) => {
-  //       const fileMode = mode(stats);
-  //       totalBlocks += stats.blocks
-  //       return new Stats()
-  //         .mode(fileMode.toString())
-  //         .nlink(stats.nlink)
-  //         .uid(userid.username(stats.uid))
-  //         .gid(userid.groupname(stats.gid))
-  //         .size(stats.size)
-  //         .status(statuses[filename] || '  ')
-  //         .date(dateFormat(new Date(stats.mtime), 'mmm dd HH:MM'))
-  //         .name(filename)
-  //         .isDirectory(stats.isDirectory())
-  //         .isSymbolicLink(stats.isSymbolicLink())
-  //         .realpath(stats.realpath)
-  //         .isExecutable(isExecutable(fileMode))
-  //         .stats
-  //     })
-  //   }))
-  // })
-  // .then((files) => {
-  //   console.log('total', totalBlocks)
-  //   files.forEach((file) => {
-  //     console.log(
-  //       file.mode,
-  //       pad(longest.nlink,  file.nlink),
-  //       pad(longest.uid,    file.uid)     .grey,
-  //       pad(file.gid,       longest.gid)  .grey,
-  //       pad(longest.size,   file.size),
-  //       pad(longest.date,   file.date),
-  //       statusMarkers[file.status],
-  //       file.isSymbolicLink
-  //         ? file.name.cyan + ' -> ' + path.relative(gitRoot, file.realpath)
-  //         : file.name.blueIf(file.isDirectory).redIf(file.isExecutable)
-  //     )
-  //   })
-  // })
+
+/**
+ * Grab the root dir of the project, run in it's own thread for maximum fastness
+ */
+
+const gitRootPromise = exec('command git rev-parse --show-toplevel').then(trim);
+
+
+/**
+ * All
+ */
+Promise.all([
+  gitRootPromise,
+  statusPromise
+])
+.then(results => {
+  let totalBlocks = 0
+  const gitRoot = results[0];
+  const statuses = results[1];
+
+  readdir(gitRoot)
+    .then(concat(['.', '..']))
+    .then(files => {
+      return Promise.all(files.map(filename => {
+        return lstat(filename).then(stats => {
+          const fileMode = mode(stats);
+          totalBlocks += stats.blocks
+          return new Stats()
+            .mode(fileMode.toString())
+            .nlink(stats.nlink)
+            .uid(userid.username(stats.uid))
+            .gid(userid.groupname(stats.gid))
+            .size(stats.size)
+            .status(statuses[filename] || '  ')
+            .date(dateFormat(new Date(stats.mtime), 'mmm dd HH:MM'))
+            .name(filename)
+            .isDirectory(stats.isDirectory())
+            .isSymbolicLink(stats.isSymbolicLink())
+            .realpath(stats.realpath)
+            .isExecutable(isExecutable(fileMode))
+            .stats
+        })
+      }))
+    })
+    .then(files => {
+      console.log('total', totalBlocks)
+      files.forEach((file) => {
+        console.log(
+          file.mode,
+          pad(longest.nlink,  file.nlink),
+          pad(longest.uid,    file.uid)     .grey,
+          pad(file.gid,       longest.gid)  .grey,
+          pad(longest.size,   file.size),
+          pad(longest.date,   file.date),
+          statusMarkers[file.status],
+          file.isSymbolicLink
+            ? file.name.cyan + ' -> ' + path.relative(gitRoot, file.realpath)
+            : file.name.blueIf(file.isDirectory).redIf(file.isExecutable)
+        )
+      })
+    })
+})
+
+
 
 function log(data) {
   console.log(data)
