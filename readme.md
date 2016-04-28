@@ -1,7 +1,7 @@
 experimental work in progress implementation of
 [k](https://github.com/supercrabtree/k) in node
 
-ls for the modern age
+`ls` for the modern age
 
 `npm install --global kay`
 
