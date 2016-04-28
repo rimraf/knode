@@ -11,6 +11,9 @@
     "stat-mode": "0.2.1",
     "userid": "0.2.0"
   },
+  "bin": {
+    "k": "k.js"
+  },
   "devDependencies": {},
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
