@@ -28,6 +28,14 @@ const statusMarkers = require('./lib/status-markers')
 const statuses = {}
 const longest = {}
 
+
+/**
+ * Grab the root dir of the project, run in it's own thread for maximum fastness
+ */
+
+const gitRootPromise = exec('command git rev-parse --show-toplevel').then(trim);
+
+
 /**
  * Gather all the files. We use two commands here because --untracked-files=all
  * used with --ignored in the same command will recursively list all ignored
@@ -62,12 +70,6 @@ const statusPromise = Promise.all([
 }))
 
 
-
-/**
- * Grab the root dir of the project, run in it's own thread for maximum fastness
- */
-
-const gitRootPromise = exec('command git rev-parse --show-toplevel').then(trim);
 
 
 /**
