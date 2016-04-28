@@ -5,8 +5,8 @@ ls for the modern age
 
 `npm install --global kay`
 
-I recommend aliasing to `k` for maximum unix
+hit k
 
-in your .bashrc .zshrc .whateverrc
+`k`
 
-`alias k="kay"`
+profit 💰️
