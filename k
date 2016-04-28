@@ -63,16 +63,6 @@ const statusMarkers = {
   '!!': '|'.grey,
 }
 
-
-/**
- * Removes any strings from the array that start '??' and end '/'
- * i.e. untracked folders
- */
-const removeUntrackedFolders = reject(item => {
-  return item.substr(0, 2) === '??' && item.substr(-1) === '/';
-});
-
-
 const statuses = {}
 const longest = {}
 
@@ -178,6 +168,7 @@ function log(data) {
   console.log(data)
   return data
 }
+
 function err(data) {
   console.error(data)
   return data
@@ -258,3 +249,12 @@ function exec(cmd, options) {
   })
 }
 
+/**
+ * Removes any strings from an array that start '??' and end '/'
+ * i.e. untracked folders
+ */
+function removeUntrackedFolders(items) {
+  return reject(item => {
+    return item.substr(0, 2) === '??' && item.substr(-1) === '/'
+  }, items);
+}
