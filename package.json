@@ -1,6 +1,6 @@
 {
   "name": "kay",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "experimental implementation of k in node",
   "main": "index.js",
   "dependencies": {
