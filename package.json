@@ -17,12 +17,22 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/rimraf/knode.git"
+    "url": "https://github.com/supercrabtree/knode.git"
   },
-  "author": "",
-  "license": "ISC",
+  "author": "George Crabtree <supercrabtree@googlemail.com> (https://github.com/supercrabtree)",
+  "license": "MIT",
   "bugs": {
-    "url": "https://github.com/rimraf/knode/issues"
+    "url": "https://github.com/supercrabtree/knode/issues"
   },
-  "homepage": "https://github.com/rimraf/knode"
+  "homepage": "https://github.com/supercrabtree/knode",
+  "keywords": [
+    "ls",
+    "k",
+    "list",
+    "dirs",
+    "directory",
+    "directories",
+    "dir",
+    "git"
+  ]
 }
