@@ -2,66 +2,28 @@
 
 'use strict'
 
-const fs           = require('fs')
-const pad          = require('pad')
-const path         = require('path')
-const colors       = require('colors')
-const dateFormat   = require('dateformat')
-const childProcess = require('child_process')
-const mode         = require('stat-mode')
-const userid       = require('userid')
-const flatten      = require('lodash/fp/flatten')
-const split        = require('lodash/fp/split')
-const trim         = require('lodash/fp/trim')
-const trimEnd      = require('lodash/fp/trimEnd')
-const trimStart    = require('lodash/fp/trimStart')
-const map          = require('lodash/fp/map')
-const uniq         = require('lodash/fp/uniq')
-const dropRight    = require('lodash/fp/dropRight')
-const reject       = require('lodash/fp/reject')
-const concat       = require('lodash/fp/concat')
-const each         = require('lodash/fp/each')
+const fs            = require('fs')
+const pad           = require('pad')
+const path          = require('path')
+const colors        = require('colors')
+const dateFormat    = require('dateformat')
+const childProcess  = require('child_process')
+const mode          = require('stat-mode')
+const userid        = require('userid')
+const flatten       = require('lodash/fp/flatten')
+const split         = require('lodash/fp/split')
+const trim          = require('lodash/fp/trim')
+const trimEnd       = require('lodash/fp/trimEnd')
+const trimStart     = require('lodash/fp/trimStart')
+const map           = require('lodash/fp/map')
+const uniq          = require('lodash/fp/uniq')
+const dropRight     = require('lodash/fp/dropRight')
+const reject        = require('lodash/fp/reject')
+const concat        = require('lodash/fp/concat')
+const each          = require('lodash/fp/each')
 
+const statusMarkers = require('./lib/status-markers')
 
-const statusMarkers = {
-  // https://git-scm.com/docs/git-status
-  // default
-  '  ': '|'.green,
-
-  // not updated
-  ' M': '+'.red,
-  ' D': '-'.red, //(doesn't work because deleted files are not shown by readdir)
-
-  // updated in index
-  'M ': '+'.green,
-  'MM': '+'.green,
-  'MD': '+'.green,
-
-  // added to index
-  'A ': '+'.green,
-  'AM': '+'.green,
-  'AD': '+'.green,
-
-  // deleted from index (don't work because deleted files are not shown by readdir)
-  'D ': '-'.green,
-  'DM': '-'.green,
-
-  // renamed in index (don't work because output from git status --porcelain is 'oldfile -> newfile' look at git status -z)
-  'R ': '>'.green,
-  'RM': '>'.green,
-  'RD': '>'.green,
-
-  // copied in index (?)
-  'C ': '>'.green,
-  'CM': '>'.green,
-  'CD': '>'.green,
-
-  // untracked
-  '??': '+'.yellow,
-
-  // ignored
-  '!!': '|'.grey,
-}
 
 const statuses = {}
 const longest = {}
