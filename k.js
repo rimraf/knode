@@ -22,9 +22,22 @@ const reject        = require('lodash/fp/reject')
 const concat        = require('lodash/fp/concat')
 const each          = require('lodash/fp/each')
 const join          = require('lodash/fp/join')
+const meow          = require('meow')
 
 const statusMarkers = require('./lib/status-markers')
 
+const cli = meow(`
+    Usage
+      $ k [options] [files ...]
+
+    Options
+      -a, --all  Include hidden files
+
+`, {
+    alias: {
+        a: 'all'
+    }
+});
 
 const statuses = {}
 const longest = {}
