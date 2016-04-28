@@ -21,111 +21,138 @@ const dropRight     = require('lodash/fp/dropRight')
 const reject        = require('lodash/fp/reject')
 const concat        = require('lodash/fp/concat')
 const each          = require('lodash/fp/each')
+const join          = require('lodash/fp/join')
 
 const statusMarkers = require('./lib/status-markers')
 
 
 const statuses = {}
 const longest = {}
-
-
-/**
- * Grab the root dir of the project, run in it's own thread for maximum fastness
- */
-
-const gitRootPromise = exec('command git rev-parse --show-toplevel').then(trim);
-
-
-/**
- * Gather all the files. We use two commands here because --untracked-files=all
- * used with --ignored in the same command will recursively list all ignored
- * files, which is slow. There is a little duplication because of this, but then
- * use a bit of lodash fun to clean it up.
- */
-
-const statusPromise = Promise.all([
-  exec('command git status --porcelain --ignored'),
-  exec('command git status --porcelain --untracked-files=all'),
-])
-
-// split each string into an array of files
-.then(map(split('\n')))
-
-// remove the last element in each array as it is always an empty string
-.then(map(dropRight(1)))
-
-// squish them together and remove duplicates
-.then(flatten)
-.then(uniq)
-
-// untracked folders need to be removed because untracked files are also there
-// and untracked folders are just extra noise
-.then(removeUntrackedFolders)
-
-// convert the strings into more usable form e.g. {file: 'path', status: '??'}
-.then(each(porcelainStatus => {
-  const status = porcelainStatus.substring(0, 2);
-  const filename = porcelainStatus.substring(3).replace(/\/$/, "");
-  statuses[filename] = status;
-}))
-
+let isGit = true
+let root
+let totalBlocks = 0
 
 
 
 /**
- * All
+ * Find the root of the git repo we are in, if we are not inside a repo, just
+ * set the root to the cwd.
  */
-Promise.all([
-  gitRootPromise,
-  statusPromise
-])
-.then(results => {
-  let totalBlocks = 0
-  const gitRoot = results[0];
 
-  readdir(gitRoot)
-    .then(concat(['.', '..']))
-    .then(files => {
-      return Promise.all(files.map(filename => {
-        return lstat(filename).then(stats => {
-          const fileMode = mode(stats);
-          totalBlocks += stats.blocks
-          return new Stats()
-            .mode(fileMode.toString())
-            .nlink(stats.nlink)
-            .uid(userid.username(stats.uid))
-            .gid(userid.groupname(stats.gid))
-            .size(stats.size)
-            .status(statuses[filename] || '  ')
-            .date(dateFormat(new Date(stats.mtime), 'mmm dd HH:MM'))
-            .name(filename)
-            .isDirectory(stats.isDirectory())
-            .isSymbolicLink(stats.isSymbolicLink())
-            .realpath(stats.realpath)
-            .isExecutable(isExecutable(fileMode))
-            .stats
-        })
-      }))
-    })
-    .then(files => {
-      console.log('total', totalBlocks)
-      files.forEach(file => {
-        console.log(
-          file.mode,
-          pad(longest.nlink,  file.nlink),
-          pad(longest.uid,    file.uid)     .grey,
-          pad(file.gid,       longest.gid)  .grey,
-          pad(longest.size,   file.size),
-          pad(longest.date,   file.date),
-          statusMarkers[file.status],
-          file.isSymbolicLink
+exec('command git rev-parse --show-toplevel')
+  .then(trim)
+  .then(gitRoot => root = gitRoot)
+  .catch(() => {
+    isGit = false
+    root = process.cwd()
+  })
+  .then(() => {
+    if (isGit) return getStatus()
+  })
+  .then(() => {
+
+    return readdir(root)
+      .then(concat(['.', '..']))
+      .then(files => {
+        return Promise.all(files.map(filename => {
+
+          return lstat(filename).then(stats => {
+
+            const fileMode = mode(stats);
+            totalBlocks += stats.blocks
+
+            return new Stats()
+              .mode(fileMode.toString())
+              .nlink(stats.nlink)
+              .uid(userid.username(stats.uid))
+              .gid(userid.groupname(stats.gid))
+              .size(stats.size)
+              .status(statuses[filename] || '  ')
+              .date(dateFormat(new Date(stats.mtime), 'mmm dd HH:MM'))
+              .name(filename)
+              .isDirectory(stats.isDirectory())
+              .isSymbolicLink(stats.isSymbolicLink())
+              .realpath(stats.realpath)
+              .isExecutable(isExecutable(fileMode))
+              .stats
+
+          })
+        }))
+      })
+      .then(files => {
+
+        console.log('total', totalBlocks)
+
+        files.forEach(file => {
+
+          const results = [
+            file.mode,
+            pad(longest.nlink,  file.nlink),
+            pad(longest.uid,    file.uid)     .grey,
+            pad(file.gid,       longest.gid)  .grey,
+            pad(longest.size,   file.size),
+            pad(longest.date,   file.date)
+          ]
+
+          if (isGit) {
+           results.push(statusMarkers[file.status])
+          }
+
+          const filename = file.isSymbolicLink
             ? file.name.cyan + ' -> ' + path.relative(gitRoot, file.realpath)
             : file.name.blueIf(file.isDirectory).redIf(file.isExecutable)
-        )
+
+          results.push(filename);
+
+          console.log.apply(console, results);
+        })
       })
-    })
-})
-.catch(err)
+  })
+  .catch(err)
+
+
+
+
+function getStatus() {
+
+  /**
+   * Gather all the files. We use two commands here because --untracked-files=all
+   * used with --ignored in the same command will recursively list all ignored
+   * files, which is slow. There is a little duplication because of this, but then
+   * use a bit of lodash fun to clean it up.
+   */
+
+  return Promise.all([
+    exec('command git status --porcelain --ignored'),
+    exec('command git status --porcelain --untracked-files=all'),
+  ])
+
+  // split each string into an array of files
+  .then(map(split('\n')))
+
+  // remove the last element in each array as it is always an empty string
+  .then(map(dropRight(1)))
+
+  // squish them together and remove duplicates
+  .then(flatten)
+  .then(uniq)
+
+  // untracked folders need to be removed because untracked files are also there
+  // and untracked folders are just extra noise
+  .then(removeUntrackedFolders)
+
+  // convert the strings into more usable form e.g. {file: 'path', status: '??'}
+  .then(each(porcelainStatus => {
+    const status = porcelainStatus.substring(0, 2);
+    const filename = porcelainStatus.substring(3).replace(/\/$/, "");
+    statuses[filename] = status;
+  }))
+
+}
+
+
+
+
 
 
 function log(data) {
